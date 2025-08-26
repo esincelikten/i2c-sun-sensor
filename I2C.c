@@ -128,7 +128,8 @@ static uint8_t i2c_scan_find(uint8_t want_addr7){  //scan the I²C bus and repor
 }
  */
 static void ads_init_manual_mode(void){  //put ADC into manual sequence mode tells the ADC not to loop over channels, only measure the one I say
-    ads_write(REG_DATA_CFG, 0x10);
+    ads_write(REG_GENERAL_CFG, 0x01);
+	ads_write(REG_DATA_CFG, 0x02);
     ads_write(REG_SEQUENCE_CFG, 0x00);
     ads_write(REG_MANUAL_CH_SEL, (uint8_t)(SAMPLE_CHANNEL & 0x0F));
 }
@@ -179,15 +180,28 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
-	 // ads_write(REG_MANUAL_CH_SEL, (uint8_t)(SAMPLE_CHANNEL & 0x0F));     //Set the ADC to measure the channel wanted
-	  if(ads_read_frame(frame, sizeof frame)==HAL_OK){
-		  
-	      uint16_t raw12 = (uint16_t)(((uint16_t)frame[0]<<8)|frame[1]); 
-	      raw12 >>= 4;  
-	      adcs_send((uint8_t*)&raw12, sizeof raw12);
-	  }
-	  HAL_Delay(10);  // delay time **change it** if you want more
+    {
+        // Step 1: Trigger manual conversion
+        if(ads_write(REG_GENERAL_CFG, 0x01) == HAL_OK) {  // Set START bit
+            
+            // Step 2: Wait for conversion completion  
+            // ADS7138 conversion time is ~1.2µs typical, 2µs max
+            HAL_Delay(1);  // 1ms is more than enough
+            
+            // Step 3: Read conversion result
+            if(ads_read_frame(frame, sizeof(frame)) == HAL_OK) {
+                // Step 4: Process 12-bit data
+                uint16_t raw12 = (uint16_t)(((uint16_t)frame[0] << 8) | frame[1]); 
+                raw12 >>= 4;  // Shift to get 12-bit value (assuming 16-bit aligned)
+                
+                // Step 5: Send data
+                adcs_send((uint8_t*)&raw12, sizeof(raw12));
+            }
+        }
+        
+        HAL_Delay(10);  // Sampling interval (100Hz)
+    }
+}
 
 
     /* USER CODE END WHILE */
@@ -272,4 +286,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
 
