@@ -94,25 +94,29 @@ static HAL_StatusTypeDef ads_read_frame(uint8_t *buf, uint16_t nbytes){  //read 
     return HAL_I2C_Master_Receive(&hi2c1, (uint16_t)(ADS7138_ADDR7<<1), buf, nbytes, 50);
 }
 
-static uint8_t i2c_scan_find(uint8_t want_addr7){  //scan the I²C bus and report if a device responds at the 7-bit address
+static uint8_t i2c_scan_find(uint8_t want_addr7){  //scan the I²C bus and report if a device responds at the 7-bit address here I am covering all possible register addresses
     for(uint8_t a=1; a<0x7F; a++)
         if(HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t)(a<<1), 1, 5)==HAL_OK)
             if(a==want_addr7) return 1;
     return 0;
 }
 
+//I dont know whıch functıon works better so I put both in my code this function is taken from AI
+
+
 /*static void ads_init_manual_mode(void){  // Stop any ongoing sequencing first
     
     ads_write_reg(REG_SEQUENCE_CFG, 0x00); 
 
-    // The PIN_CFG register reset value is 0x00, which configures all pins as analog inputs [cite: 1785]
+    // The PIN_CFG register reset value is 0x00, which configures all pins as analog inputs 
+	
     ads_write_reg(REG_PIN_CFG, 0x00); 
 	
 	ads_write_reg(REG_GENERAL_CFG, 0x02); // Set CAL bit to 1b 
     while((HAL_I2C_Mem_Read(&hi2c1, (uint16_t)(ADS7138_ADDR7 << 1), REG_GENERAL_CFG, I2C_MEMADD_SIZE_8BIT, (uint8_t[]){0}, 1, 50) == HAL_OK) && (HAL_I2C_Master_Receive(&hi2c1, (uint16_t)(ADS7138_ADDR7 << 1), (uint8_t[]){0}, 1, 50) == HAL_OK) && ( (uint8_t){0}[0] & 0x02 )); // Wait for CAL bit to be cleared to 0b by the device 
 
     // Set the operating mode to Manual mode (CONV_MODE=00b, SEQ_MODE=00b)
-    // These are the default reset values, so explicit write might be optional but is good practiceö
+   
     ads_write_reg(REG_OPMODE_CFG, 0x00); 
     ads_write_reg(REG_SEQUENCE_CFG, 0x00); 
     // Select the channel to be converted in manual mode
@@ -128,7 +132,7 @@ static void ads_init_manual_mode(void){  //put ADC into manual sequence mode tel
     ads_write(REG_SEQUENCE_CFG, 0x00);
     ads_write(REG_MANUAL_CH_SEL, (uint8_t)(SAMPLE_CHANNEL & 0x0F));
 }
-__weak void adcs_send(uint8_t *data, uint16_t len){
+__weak void adcs_send(uint8_t *data, uint16_t len){     //Note to myself: if there happens a problem take this code into header file and get rid of weak !
 	(void)data; 
 	(void)len; 
 }  //default implementation
@@ -268,3 +272,4 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
